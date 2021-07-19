@@ -6,10 +6,11 @@ type invoice struct {
 }
 
 type performance struct {
-	PlayID   string
-	Audience int
-	Play     play
-	Amount   float64
+	PlayID        string
+	Audience      int
+	Play          play
+	Amount        float64
+	VolumeCredits int
 }
 
 type play struct {

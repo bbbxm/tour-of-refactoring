@@ -22,8 +22,10 @@ var (
 )
 
 type StatementData struct {
-	Customer     string
-	Performances []performance
+	Customer           string
+	Performances       []performance
+	TotalAmount        float64
+	TotalVolumeCredits int
 }
 
 func statement(invoice invoice, plays map[string]play) string {
@@ -35,58 +37,33 @@ func statement(invoice invoice, plays map[string]play) string {
 		for _, p := range aPerformance {
 			p.Play = playFor(p)
 			p.Amount = amountFor(p)
+			p.VolumeCredits = volumeCreditFor(p)
 			result = append(result, p)
 		}
 
 		return result
 	}
+
 	statementData := new(StatementData)
 	statementData.Customer = invoice.Customer
 	statementData.Performances = enrichPerformance(invoice.Performances)
-	return renderPlainText(statementData, plays)
+	statementData.TotalAmount = totalAmount(*statementData)
+	statementData.TotalVolumeCredits = totalVolumeCredits(*statementData)
+
+	return renderPlainText(statementData)
 }
 
-func renderPlainText(data *StatementData, plays map[string]play) string {
+func renderPlainText(data *StatementData) string {
 	strBuilder := strings.Builder{}
 	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", data.Customer))
 
-	volumeCreditFor := func(perf performance) int {
-		result := 0
-		// add volume credits
-		result += func() int {
-			if perf.Audience-30 > 0 {
-				return perf.Audience - 30
-			}
-			return 0
-		}()
-		// add extra credits for every ten comedy attendees
-		if perf.PlayID == "comedy" {
-			result += perf.Audience / 5
-		}
-		return result
-	}
-
-	totalVolumeCredits := func() int {
-		var result int
-		for _, perf := range data.Performances {
-			result += volumeCreditFor(perf)
-		}
-		return result
-	}
-	totalAmount := func() float64 {
-		var result float64
-		for _, perf := range data.Performances {
-			result += perf.Amount
-		}
-		return result
-	}
 	for _, perf := range data.Performances {
 		// print line for this order
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", perf.Play.Name, usd(perf.Amount), perf.Audience))
 	}
 
-	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount())))
-	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", totalVolumeCredits()))
+	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(data.TotalAmount)))
+	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", data.TotalVolumeCredits))
 	return strBuilder.String()
 }
 
@@ -110,6 +87,37 @@ func amountFor(perf performance) float64 {
 		result += float64(300 * perf.Audience)
 	default:
 		log.Panicf("unknown type %s", perf.Play.Type)
+	}
+	return result
+}
+
+func volumeCreditFor(perf performance) int {
+	result := 0
+	// add volume credits
+	result += func() int {
+		if perf.Audience-30 > 0 {
+			return perf.Audience - 30
+		}
+		return 0
+	}()
+	// add extra credits for every ten comedy attendees
+	if perf.PlayID == "comedy" {
+		result += perf.Audience / 5
+	}
+	return result
+}
+
+func totalVolumeCredits(data StatementData) int {
+	var result int
+	for _, perf := range data.Performances {
+		result += perf.VolumeCredits
+	}
+	return result
+}
+func totalAmount(data StatementData) float64 {
+	var result float64
+	for _, perf := range data.Performances {
+		result += perf.Amount
 	}
 	return result
 }
