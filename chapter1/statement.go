@@ -21,9 +21,21 @@ var (
 	}
 )
 
+type StatementData struct {
+	Customer     string
+	Performances []performance
+}
+
 func statement(invoice invoice, plays map[string]play) string {
+	statementData := new(StatementData)
+	statementData.Customer = invoice.Customer
+	statementData.Performances = invoice.Performances
+	return renderPlainText(statementData, plays)
+}
+
+func renderPlainText(data *StatementData, plays map[string]play) string {
 	strBuilder := strings.Builder{}
-	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", invoice.Customer))
+	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", data.Customer))
 
 	playFor := func(aPerformance performance) play {
 		return plays[aPerformance.PlayID]
@@ -66,19 +78,19 @@ func statement(invoice invoice, plays map[string]play) string {
 
 	totalVolumeCredits := func() int {
 		var result int
-		for _, perf := range invoice.Performances {
+		for _, perf := range data.Performances {
 			result += volumeCreditFor(perf)
 		}
 		return result
 	}
 	totalAmount := func() float64 {
 		var result float64
-		for _, perf := range invoice.Performances {
+		for _, perf := range data.Performances {
 			result += amountFor(perf)
 		}
 		return result
 	}
-	for _, perf := range invoice.Performances {
+	for _, perf := range data.Performances {
 		// print line for this order
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", playFor(perf).Name, usd(amountFor(perf)), perf.Audience))
 	}
