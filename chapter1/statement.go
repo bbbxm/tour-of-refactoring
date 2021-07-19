@@ -77,9 +77,9 @@ func statement(invoice invoice, plays map[string]play) string {
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", playFor(perf).Name, usd(amountFor(perf)/100), perf.Audience))
 		totalAmount += amountFor(perf)
 	}
-	volumeCredits := totalVolumeCredits()
+
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount/100)))
-	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", volumeCredits))
+	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", totalVolumeCredits()))
 	return strBuilder.String()
 }
 
