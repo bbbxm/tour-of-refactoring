@@ -9,6 +9,7 @@ type performance struct {
 	PlayID   string
 	Audience int
 	Play     play
+	Amount   float64
 }
 
 type play struct {

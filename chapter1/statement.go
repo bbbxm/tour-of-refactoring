@@ -34,6 +34,7 @@ func statement(invoice invoice, plays map[string]play) string {
 		result := make([]performance, 0, len(aPerformance))
 		for _, p := range aPerformance {
 			p.Play = playFor(p)
+			p.Amount = amountFor(p)
 			result = append(result, p)
 		}
 
@@ -42,7 +43,6 @@ func statement(invoice invoice, plays map[string]play) string {
 	statementData := new(StatementData)
 	statementData.Customer = invoice.Customer
 	statementData.Performances = enrichPerformance(invoice.Performances)
-
 	return renderPlainText(statementData, plays)
 }
 
@@ -50,25 +50,6 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 	strBuilder := strings.Builder{}
 	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", data.Customer))
 
-	amountFor := func(perf performance) float64 {
-		var result float64
-		switch perf.Play.Type {
-		case "tragedy":
-			result = 40000
-			if perf.Audience > 30 {
-				result += float64(1000 * (perf.Audience - 30))
-			}
-		case "comedy":
-			result = 30000
-			if perf.Audience > 20 {
-				result += float64(10000 + 500*(perf.Audience-20))
-			}
-			result += float64(300 * perf.Audience)
-		default:
-			log.Panicf("unknown type %s", perf.Play.Type)
-		}
-		return result
-	}
 	volumeCreditFor := func(perf performance) int {
 		result := 0
 		// add volume credits
@@ -95,13 +76,13 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 	totalAmount := func() float64 {
 		var result float64
 		for _, perf := range data.Performances {
-			result += amountFor(perf)
+			result += perf.Amount
 		}
 		return result
 	}
 	for _, perf := range data.Performances {
 		// print line for this order
-		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", perf.Play.Name, usd(amountFor(perf)), perf.Audience))
+		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", perf.Play.Name, usd(perf.Amount), perf.Audience))
 	}
 
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount())))
@@ -111,4 +92,24 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 
 func usd(aNumber float64) string {
 	return fmt.Sprintf("%0.2f", aNumber/100)
+}
+
+func amountFor(perf performance) float64 {
+	var result float64
+	switch perf.Play.Type {
+	case "tragedy":
+		result = 40000
+		if perf.Audience > 30 {
+			result += float64(1000 * (perf.Audience - 30))
+		}
+	case "comedy":
+		result = 30000
+		if perf.Audience > 20 {
+			result += float64(10000 + 500*(perf.Audience-20))
+		}
+		result += float64(300 * perf.Audience)
+	default:
+		log.Panicf("unknown type %s", perf.Play.Type)
+	}
+	return result
 }
