@@ -23,7 +23,7 @@ var (
 
 func statement(invoice invoice, plays map[string]play) string {
 	strBuilder := strings.Builder{}
-	totalAmount, volumeCredits := float64(0), 0
+	totalAmount := float64(0)
 	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", invoice.Customer))
 
 	playFor := func(aPerformance performance) play {
@@ -66,10 +66,13 @@ func statement(invoice invoice, plays map[string]play) string {
 	}
 
 	for _, perf := range invoice.Performances {
-		volumeCredits += volumeCreditFor(perf)
 		// print line for this order
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", playFor(perf).Name, usd(amountFor(perf)/100), perf.Audience))
 		totalAmount += amountFor(perf)
+	}
+	volumeCredits := 0
+	for _, perf := range invoice.Performances {
+		volumeCredits += volumeCreditFor(perf)
 	}
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount/100)))
 	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", volumeCredits))
