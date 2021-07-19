@@ -51,7 +51,6 @@ func statement(invoice invoice, plays map[string]play) string {
 	}
 
 	for _, perf := range invoice.Performances {
-		thisAmount := amountFor(perf)
 		// add volume credits
 		volumeCredits += func() int {
 			if perf.Audience-30 > 0 {
@@ -64,8 +63,8 @@ func statement(invoice invoice, plays map[string]play) string {
 			volumeCredits += perf.Audience / 5
 		}
 		// print line for this order
-		strBuilder.WriteString(fmt.Sprintf("  %s:$%0.2f (%d)\n", playFor(perf).Name, thisAmount/100, perf.Audience))
-		totalAmount += thisAmount
+		strBuilder.WriteString(fmt.Sprintf("  %s:$%0.2f (%d)\n", playFor(perf).Name, amountFor(perf)/100, perf.Audience))
+		totalAmount += amountFor(perf)
 	}
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %0.2f\n", totalAmount/100))
 	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", volumeCredits))
