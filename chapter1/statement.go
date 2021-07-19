@@ -45,12 +45,12 @@ func statement(invoice invoice, plays map[string]play) string {
 			}
 			result += float64(300 * perf.Audience)
 		default:
-			log.Panicf("unknown type %s", play.Type)
+			log.Panicf("unknown type %s", playFor(perf).Type)
 		}
 		return result
 	}
-
-	for _, perf := range invoice.Performances {
+	volumeCreditFor := func(perf performance) int {
+		volumeCredits := 0
 		// add volume credits
 		volumeCredits += func() int {
 			if perf.Audience-30 > 0 {
@@ -62,6 +62,11 @@ func statement(invoice invoice, plays map[string]play) string {
 		if perf.PlayID == "comedy" {
 			volumeCredits += perf.Audience / 5
 		}
+		return volumeCredits
+	}
+
+	for _, perf := range invoice.Performances {
+		volumeCredits += volumeCreditFor(perf)
 		// print line for this order
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%0.2f (%d)\n", playFor(perf).Name, amountFor(perf)/100, perf.Audience))
 		totalAmount += amountFor(perf)
