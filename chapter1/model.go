@@ -8,6 +8,7 @@ type invoice struct {
 type performance struct {
 	PlayID   string
 	Audience int
+	Play     play
 }
 
 type play struct {

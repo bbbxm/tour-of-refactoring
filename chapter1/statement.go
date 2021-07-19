@@ -27,9 +27,22 @@ type StatementData struct {
 }
 
 func statement(invoice invoice, plays map[string]play) string {
+	playFor := func(aPerformance performance) play {
+		return plays[aPerformance.PlayID]
+	}
+	enrichPerformance := func(aPerformance []performance) []performance {
+		result := make([]performance, 0, len(aPerformance))
+		for _, p := range aPerformance {
+			p.Play = playFor(p)
+			result = append(result, p)
+		}
+
+		return result
+	}
 	statementData := new(StatementData)
 	statementData.Customer = invoice.Customer
-	statementData.Performances = invoice.Performances
+	statementData.Performances = enrichPerformance(invoice.Performances)
+
 	return renderPlainText(statementData, plays)
 }
 
@@ -37,13 +50,9 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 	strBuilder := strings.Builder{}
 	strBuilder.WriteString(fmt.Sprintf("Statement for %s\n", data.Customer))
 
-	playFor := func(aPerformance performance) play {
-		return plays[aPerformance.PlayID]
-	}
-
 	amountFor := func(perf performance) float64 {
 		var result float64
-		switch playFor(perf).Type {
+		switch perf.Play.Type {
 		case "tragedy":
 			result = 40000
 			if perf.Audience > 30 {
@@ -56,7 +65,7 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 			}
 			result += float64(300 * perf.Audience)
 		default:
-			log.Panicf("unknown type %s", playFor(perf).Type)
+			log.Panicf("unknown type %s", perf.Play.Type)
 		}
 		return result
 	}
@@ -92,7 +101,7 @@ func renderPlainText(data *StatementData, plays map[string]play) string {
 	}
 	for _, perf := range data.Performances {
 		// print line for this order
-		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", playFor(perf).Name, usd(amountFor(perf)), perf.Audience))
+		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", perf.Play.Name, usd(amountFor(perf)), perf.Audience))
 	}
 
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount())))
