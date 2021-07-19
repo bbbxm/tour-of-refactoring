@@ -65,15 +65,19 @@ func statement(invoice invoice, plays map[string]play) string {
 		return volumeCredits
 	}
 
+	totalVolumeCredits := func() int {
+		volumeCredits := 0
+		for _, perf := range invoice.Performances {
+			volumeCredits += volumeCreditFor(perf)
+		}
+		return volumeCredits
+	}
 	for _, perf := range invoice.Performances {
 		// print line for this order
 		strBuilder.WriteString(fmt.Sprintf("  %s:$%s (%d)\n", playFor(perf).Name, usd(amountFor(perf)/100), perf.Audience))
 		totalAmount += amountFor(perf)
 	}
-	volumeCredits := 0
-	for _, perf := range invoice.Performances {
-		volumeCredits += volumeCreditFor(perf)
-	}
+	volumeCredits := totalVolumeCredits()
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %s\n", usd(totalAmount/100)))
 	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", volumeCredits))
 	return strBuilder.String()
