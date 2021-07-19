@@ -49,9 +49,9 @@ func statement(invoice invoice, plays map[string]play) string {
 		return result
 	}
 	volumeCreditFor := func(perf performance) int {
-		volumeCredits := 0
+		result := 0
 		// add volume credits
-		volumeCredits += func() int {
+		result += func() int {
 			if perf.Audience-30 > 0 {
 				return perf.Audience - 30
 			}
@@ -59,24 +59,24 @@ func statement(invoice invoice, plays map[string]play) string {
 		}()
 		// add extra credits for every ten comedy attendees
 		if perf.PlayID == "comedy" {
-			volumeCredits += perf.Audience / 5
+			result += perf.Audience / 5
 		}
-		return volumeCredits
+		return result
 	}
 
 	totalVolumeCredits := func() int {
-		volumeCredits := 0
+		var result int
 		for _, perf := range invoice.Performances {
-			volumeCredits += volumeCreditFor(perf)
+			result += volumeCreditFor(perf)
 		}
-		return volumeCredits
+		return result
 	}
 	totalAmount := func() float64 {
-		totalAmount := float64(0)
+		var result float64
 		for _, perf := range invoice.Performances {
-			totalAmount += amountFor(perf)
+			result += amountFor(perf)
 		}
-		return totalAmount
+		return result
 	}
 	for _, perf := range invoice.Performances {
 		// print line for this order
