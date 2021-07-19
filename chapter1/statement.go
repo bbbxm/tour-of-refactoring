@@ -30,9 +30,28 @@ func statement(invoice invoice, plays map[string]play) string {
 		return plays[aPerformance.PlayID]
 	}
 
+	amountFor := func(perf performance) float64 {
+		var result float64
+		switch playFor(perf).Type {
+		case "tragedy":
+			result = 40000
+			if perf.Audience > 30 {
+				result += float64(1000 * (perf.Audience - 30))
+			}
+		case "comedy":
+			result = 30000
+			if perf.Audience > 20 {
+				result += float64(10000 + 500*(perf.Audience-20))
+			}
+			result += float64(300 * perf.Audience)
+		default:
+			log.Panicf("unknown type %s", play.Type)
+		}
+		return result
+	}
+
 	for _, perf := range invoice.Performances {
-		play := playFor(perf)
-		thisAmount := amountFor(perf, play)
+		thisAmount := amountFor(perf)
 		// add volume credits
 		volumeCredits += func() int {
 			if perf.Audience-30 > 0 {
@@ -45,30 +64,10 @@ func statement(invoice invoice, plays map[string]play) string {
 			volumeCredits += perf.Audience / 5
 		}
 		// print line for this order
-		strBuilder.WriteString(fmt.Sprintf("  %s:$%0.2f (%d)\n", play.Name, thisAmount/100, perf.Audience))
+		strBuilder.WriteString(fmt.Sprintf("  %s:$%0.2f (%d)\n", playFor(perf).Name, thisAmount/100, perf.Audience))
 		totalAmount += thisAmount
 	}
 	strBuilder.WriteString(fmt.Sprintf("Amount owned is %0.2f\n", totalAmount/100))
 	strBuilder.WriteString(fmt.Sprintf("You earned %d credits", volumeCredits))
 	return strBuilder.String()
-}
-
-func amountFor(perf performance, play play) float64 {
-	var result float64
-	switch play.Type {
-	case "tragedy":
-		result = 40000
-		if perf.Audience > 30 {
-			result += float64(1000 * (perf.Audience - 30))
-		}
-	case "comedy":
-		result = 30000
-		if perf.Audience > 20 {
-			result += float64(10000 + 500*(perf.Audience-20))
-		}
-		result += float64(300 * perf.Audience)
-	default:
-		log.Panicf("unknown type %s", play.Type)
-	}
-	return result
 }
